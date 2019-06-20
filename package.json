@@ -11,6 +11,8 @@
   "dependencies": {
     "multipipe": "^3.0.1",
     "node-expat": "^2.3.18",
-    "unzipper": "^0.10.0"
+    "simple-xml-reader": "^1.0.0",
+    "unzipper": "^0.10.0",
+    "xlsx": "^0.14.3"
   }
 }
