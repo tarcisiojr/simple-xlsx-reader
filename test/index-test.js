@@ -1,7 +1,6 @@
 const fs = require('fs');
-const unzipper = require('unzipper');
 const { Writable } = require('stream');
-const xlsxParser = require('./xlsx-stream-parser');
+const { xlsxParser } = require('../src');
 var XLSX = require('xlsx');
 
 // const fileContents = fs.createReadStream('/home/tarcisio/Temp/Excel.xlsx');
