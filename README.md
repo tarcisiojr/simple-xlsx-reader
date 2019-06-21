@@ -2,6 +2,8 @@
 # simple-xlsx-reader
 A utility to read xlsx files through NodeJS Stream.
 
+[![Build Status](https://travis-ci.org/tarcisiojr/simple-xlsx-reader.svg?branch=master)](https://travis-ci.org/tarcisiojr/simple-xlsx-reader)
+
 # Instalation
 
 ```
