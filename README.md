@@ -15,7 +15,7 @@ npm i simple-xlsx-reader --save
 ```javascript
 const { Writable } = require('stream')
 const fs = require('fs')
-const xmlParser = require('simple-xlsx-reader')
+const { xlsxParser } = require('simple-xlsx-reader')
 
 const write = (fn) => {
   return new Writable({
@@ -28,7 +28,31 @@ const write = (fn) => {
 }
 
 fs.createReadStream('path to xlsx file'))
-  .pipe(xmlParser())
+  .pipe(xlsxParser())
+  .pipe(write((row) => {
+    console.log('XLSX Row', row)
+  }))
+```
+
+To return in array of arrays format, you can use `onlyCellValues` function that get only values of cells.
+
+```javascript
+const { Writable } = require('stream')
+const fs = require('fs')
+const { xlsxParser, onlyCellValues } = require('simple-xlsx-reader')
+
+const write = (fn) => {
+  return new Writable({
+    objectMode: true,
+    write (chunk, _, callback) {
+      fn(chunk)
+      callback()
+    }
+  })
+}
+
+fs.createReadStream('path to xlsx file'))
+  .pipe(xlsxParser(onlyCellValues()))
   .pipe(write((row) => {
     console.log('XLSX Row', row)
   }))

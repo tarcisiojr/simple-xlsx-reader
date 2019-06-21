@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-const { xlsxParser, asArray } = require('../src/')
+const { xlsxParser, onlyCellValues } = require('../src/')
 const expect = require('chai').expect
 const fs = require('fs')
 const path = require('path')
@@ -23,7 +23,7 @@ describe('Testing XLSX Parser', () => {
   it('validate nodes of xml', () => {
     const elements = []
     fs.createReadStream(path.resolve(__dirname, './assets/sample1.xlsx'))
-      .pipe(xlsxParser(asArray()))
+      .pipe(xlsxParser(onlyCellValues()))
       .pipe(write((chunk) => {
         expect(chunk).to.be.a('array').that.is.not.empty
         elements.push(chunk)

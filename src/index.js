@@ -231,9 +231,9 @@ const xlsxParser = (opts) => {
   return pipe(unzipper.Parse(), xlsxStream);
 }
 
-const asArray = (opts = {}) => Object.assign({ mapCol: (col) => col.value }, opts || {})
+const onlyCellValues = (opts = {}) => Object.assign({ mapCol: (col) => col.value }, opts || {})
 
 module.exports = {
   xlsxParser,
-  asArray
+  onlyCellValues
 }
