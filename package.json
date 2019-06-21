@@ -1,6 +1,6 @@
 {
   "name": "simple-xlsx-reader",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "src/index.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "multipipe": "^3.0.1",
     "node-expat": "^2.3.18",
     "simple-xml-reader": "^1.0.0",
+    "tmp": "^0.1.0",
     "unzipper": "^0.10.0",
     "xlsx": "^0.14.3"
   },

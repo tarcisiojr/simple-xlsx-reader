@@ -2,6 +2,8 @@ const unzipper = require('unzipper');
 const pipe = require('multipipe')
 const { Writable, Duplex } = require('stream');
 const xmlParser = require('simple-xml-reader');
+const fs = require('fs');
+const tmp = require('tmp');
 
 const chainPromises = (promises) => {
   return promises.reduce((prev, task) => prev.then(() => task()), Promise.resolve())
@@ -109,6 +111,41 @@ const load = (fn) => (entry, cb) => {
     .on('finish', cb);
 }
 
+const createTemporaryFile = () => {
+  return new Promise((resolve, reject) => {
+    tmp.file((err, path, fd, cleanup) => {
+      if (err) {
+        return reject(err);
+      }
+
+      resolve({ path, fd, cleanup })
+    })
+  })
+}
+
+const copyStream = (entry, path) => {
+  return new Promise((resolve, reject) => {
+    entry.pipe(fs.createWriteStream(path))
+      .on('finish', resolve)
+      .on('error', reject);
+      
+  })
+}
+
+const createReadStream = (path, cleanup) => () => {
+  return fs.createReadStream(path)
+    .on('end', () => {
+      cleanup();
+    });
+}
+
+const bufferEntry = (entry) => {
+  return createTemporaryFile()
+    .then(({ path, cleanup }) => {
+      return copyStream(entry, path).then(createReadStream(path, cleanup))
+    })
+}
+
 const xlsxParser = (opts) => {
   const sharedStrings = [];
   const sheetEntries = [];
@@ -206,8 +243,16 @@ const xlsxParser = (opts) => {
         loadSharedStrings(entry, processSheets.bind(null, this, cb));
 
       } else if (fileName.match(/xl\/worksheets\/sheet/g)) {
-        sheetEntries.push({entry, fileName});
-        processSheets(this, cb);
+        if (!canLoadSheets()) {
+          bufferEntry(entry)
+            .then(bufferedEntry => {
+              sheetEntries.push({entry: bufferedEntry, fileName});
+              processSheets(this, cb);
+            })
+        } else {
+          sheetEntries.push({entry, fileName});
+          processSheets(this, cb);
+        }
 
       } else if (fileName === 'xl/styles.xml') {
         loadStyles(entry, () => {
