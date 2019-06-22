@@ -1,7 +1,7 @@
 const unzipper = require('unzipper');
 const pipe = require('multipipe')
 const { Writable, Duplex, Transform } = require('stream');
-const xmlParser = require('simple-xml-reader');
+const { xmlParser } = require('simple-xml-reader');
 const fs = require('fs');
 const tmp = require('tmp');
 

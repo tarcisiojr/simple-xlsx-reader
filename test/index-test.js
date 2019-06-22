@@ -8,7 +8,9 @@ var XLSX = require('xlsx');
 
 function impl() {
   // const fileContents = fs.createReadStream('/home/tarcisio/Temp/big.xlsx');
-  const fileContents = fs.createReadStream('/home/tarcisio/Temp/Pedido_de_compras_sem_macros_sem_multiplas_abas_ORIGINAL.xlsx');
+  // const fileContents = fs.createReadStream('/home/tarcisio/Temp/Pedido_de_compras_sem_macros_sem_multiplas_abas_ORIGINAL.xlsx');
+  const fileContents = fs.createReadStream('/home/tarcisio/Downloads/rawdata1M.xlsx');
+  
 
 
   let total = 0;
