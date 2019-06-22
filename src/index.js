@@ -1,6 +1,6 @@
 const unzipper = require('unzipper');
 const pipe = require('multipipe')
-const { Writable, Duplex } = require('stream');
+const { Writable, Duplex, Transform } = require('stream');
 const xmlParser = require('simple-xml-reader');
 const fs = require('fs');
 const tmp = require('tmp');
@@ -9,18 +9,38 @@ const chainPromises = (promises) => {
   return promises.reduce((prev, task) => prev.then(() => task()), Promise.resolve())
 }
 
-const emptyChildrenOfSheetData = (elem) => {
-  if (elem.name === 'row') {
-    elem.parent.children = [];
-  }
-
-  return elem;
+const throttle = (pauseInMilis, countToPause) => {
+  let count = 0;
+  return new Transform({
+    objectMode: true,
+    transform(chunk, _, cb) {
+      count++;
+      if (countToPause !== 0 && count == countToPause) {
+        count = 0;
+        setTimeout(cb, pauseInMilis, null, chunk);
+      } else {
+        cb(null, chunk);
+      }
+    }
+  })
 }
 
-const loadSheet = (push) => (entry) => {
+const emptyChildrenOfParent = (node) => {
+  return {
+    mapElement: (e) => {
+      if (e.name === node) {
+        e.parent.children = [];
+      }
+      return e;
+    }
+  }
+}
+
+const loadSheet = (push, throttleConfig) => (entry) => {
   return new Promise((resolve, reject) => {
     entry
-      .pipe(xmlParser({ mapElement: emptyChildrenOfSheetData }))
+      .pipe(xmlParser(emptyChildrenOfParent('row')))
+      .pipe(throttle(throttleConfig.pauseInMilis, throttleConfig.countToPause))
       .pipe(new Writable({
         objectMode: true,
         write(chunk, _, callback) {
@@ -39,8 +59,8 @@ const loadSheet = (push) => (entry) => {
   })
 }
 
-const loadSheets = (push, entries) => {
-  const loadSheetsWithConfig = loadSheet(push);
+const loadSheets = (push, entries, throttle) => {
+  const loadSheetsWithConfig = loadSheet(push, throttle);
 
   return chainPromises(entries.map(entry => loadSheetsWithConfig.bind(null, entry)));
 }
@@ -54,7 +74,7 @@ const getValue = (sharedStrings, styles, date1904, col) => {
   }
 
   if (col.attrs.t === 's') {
-    return sharedStrings[parseInt(value)].children[0].text;
+    return sharedStrings[parseInt(value)];
   }
   
   if (col.attrs.s !== '0'
@@ -98,9 +118,9 @@ const isDateFmt = (fmt) => {
   return fmt.match(/[ymdhMsb]+/) !== null;
 }
 
-const load = (fn) => (entry, cb) => {
+const load = (fn, xmlOpts = {}) => (entry, cb) => {
   entry
-    .pipe(xmlParser())
+    .pipe(xmlParser(xmlOpts))
     .pipe(new Writable({
       objectMode: true,
       write(chunk, _, callback) {
@@ -123,9 +143,9 @@ const createTemporaryFile = () => {
   })
 }
 
-const copyStream = (entry, path) => {
+const copyStream = (fromStream, toPath) => {
   return new Promise((resolve, reject) => {
-    entry.pipe(fs.createWriteStream(path))
+    fromStream.pipe(fs.createWriteStream(toPath))
       .on('finish', resolve)
       .on('error', reject);
       
@@ -156,17 +176,27 @@ const xlsxParser = (opts) => {
   let date1904 = false;
   let resume = null;
 
-  const { mapCol, mapRow, filterSheets } = Object.assign({
-    mapCol: (c) => c,
-    mapRow: (r) => r,
-    filterSheets: () => true
-  }, opts)
+  const { 
+    mapCol, 
+    mapRow, 
+    filterSheets, 
+    throttleEnabled, 
+    pauseInMilis, 
+    countToPause 
+  } = Object.assign({
+      mapCol: (c) => c,
+      mapRow: (r) => r,
+      filterSheets: () => true,
+      throttleEnabled: true,
+      pauseInMilis: 3,
+      countToPause: 2000
+    }, opts)
 
   const loadSharedStrings = load((chunk) => {
     if (chunk.name === 'si') {
-      sharedStrings.push(chunk)
+      sharedStrings.push(chunk.children[0].text)
     }
-  });
+  }, emptyChildrenOfParent('si'));
 
   const loadStyles = load((chunk) => {
     if (chunk.name === 'numFmt') {
@@ -218,7 +248,7 @@ const xlsxParser = (opts) => {
       .filter(sheetEntry => filterSheets(createSheetInfoFromEntry(sheetEntry)))
       .map(e => e.entry)
 
-    loadSheets(push, entriesToProcess)
+    loadSheets(push, entriesToProcess, { pauseInMilis, countToPause: throttleEnabled ? countToPause : 0 })
       .then(() => {
         sheetEntries.splice(0);
         next();
