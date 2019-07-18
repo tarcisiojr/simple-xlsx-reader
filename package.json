@@ -1,11 +1,11 @@
 {
   "name": "simple-xlsx-reader",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
   "main": "src/index.js",
   "repository": {
-    "type": "git", 
-    "url": "git+https://github.com/tarcisiojr/simple-xlsx-reader.git" 
+    "type": "git",
+    "url": "git+https://github.com/tarcisiojr/simple-xlsx-reader.git"
   },
   "scripts": {
     "test": "mocha test/**/**.js"
@@ -24,7 +24,7 @@
   "dependencies": {
     "multipipe": "^3.0.1",
     "node-expat": "^2.3.18",
-    "simple-xml-reader": "^1.0.2",
+    "simple-xml-reader": "^1.0.3",
     "tmp": "^0.1.0",
     "unzipper": "^0.10.1",
     "xlsx": "^0.14.3"
